@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POOMA BUILDER - Construction Management System</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="loginPage" class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>POOMA BUILDER</h1>
+                <p>Construction Management System</p>
+            </div>
+            
+            <div class="login-tabs">
+                <button class="tab-btn active" data-tab="client">Client Login</button>
+                <button class="tab-btn" data-tab="admin">Admin Login</button>
+            </div>
+            
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" id="username" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" id="password" class="form-control" required>
+                </div>
+                
+                <button type="submit" class="btn btn--primary btn--full-width">Login</button>
+                
+                <div class="login-demo-info">
+                    <p><strong>Demo Credentials:</strong></p>
+                    <p>Client: username: <code>client</code>, password: <code>client123</code></p>
+                    <p>Admin: username: <code>admin</code>, password: <code>admin123</code></p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="mainApp" class="app-container hidden">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1>POOMA BUILDER</h1>
+                    <span id="userRole" class="user-role"></span>
+                </div>
+                <div class="header-right">
+                    <span id="userName" class="user-name"></span>
+                    <button id="logoutBtn" class="btn btn--outline btn--sm">Logout</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="app-nav">
+            <div class="nav-content">
+                <ul class="nav-list" id="navList">
+                    <!-- Navigation items will be populated by JavaScript -->
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="app-main">
+            <div class="main-content">
+                
+                <!-- Client Dashboard -->
+                <div id="clientDashboard" class="page-content hidden">
+                    <h2>Project Dashboard</h2>
+                    <div class="dashboard-grid">
+                        <div class="card dashboard-card">
+                            <div class="card__body">
+                                <h3>Project Overview</h3>
+                                <div id="projectOverview"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="card dashboard-card">
+                            <div class="card__body">
+                                <h3>Progress Summary</h3>
+                                <div id="progressSummary"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="card dashboard-card">
+                            <div class="card__body">
+                                <h3>Recent Payments</h3>
+                                <div id="recentPayments"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="card dashboard-card">
+                            <div class="card__body">
+                                <h3>Latest Photos</h3>
+                                <div id="latestPhotos"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Dashboard -->
+                <div id="adminDashboard" class="page-content hidden">
+                    <h2>Admin Dashboard</h2>
+                    <div class="dashboard-grid admin-grid">
+                        <div class="card dashboard-card">
+                            <div class="card__body">
+                                <h3>Project Statistics</h3>
+                                <div id="projectStats"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="card dashboard-card">
+                            <div class="card__body">
+                                <h3>Payment Overview</h3>
+                                <div id="paymentOverview"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="card dashboard-card">
+                            <div class="card__body">
+                                <h3>Worker Attendance</h3>
+                                <div id="workerAttendance"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="card dashboard-card">
+                            <div class="card__body">
+                                <h3>Material Inventory</h3>
+                                <div id="materialInventory"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Site Progress -->
+                <div id="siteProgress" class="page-content hidden">
+                    <h2>Site Progress</h2>
+                    <div class="progress-timeline">
+                        <div id="progressTimeline"></div>
+                    </div>
+                </div>
+
+                <!-- Transactions -->
+                <div id="transactions" class="page-content hidden">
+                    <h2>Transaction History</h2>
+                    <div class="card">
+                        <div class="card__body">
+                            <div class="transactions-controls">
+                                <input type="text" id="transactionSearch" class="form-control" placeholder="Search transactions...">
+                                <select id="transactionFilter" class="form-control">
+                                    <option value="">All Types</option>
+                                    <option value="milestone">Milestone</option>
+                                    <option value="advance">Advance</option>
+                                    <option value="materials">Materials</option>
+                                </select>
+                            </div>
+                            <div id="transactionsList"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Materials -->
+                <div id="materials" class="page-content hidden">
+                    <h2>Material Tracking</h2>
+                    <div class="card">
+                        <div class="card__body">
+                            <div class="materials-controls">
+                                <input type="text" id="materialSearch" class="form-control" placeholder="Search materials...">
+                                <select id="materialFilter" class="form-control">
+                                    <option value="">All Status</option>
+                                    <option value="Used">Used</option>
+                                    <option value="In Use">In Use</option>
+                                    <option value="Delivered">Delivered</option>
+                                </select>
+                                <button id="addMaterialBtn" class="btn btn--primary">Add Material</button>
+                            </div>
+                            <div id="materialsList"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Photo Gallery -->
+                <div id="photoGallery" class="page-content hidden">
+                    <h2>Photo Gallery</h2>
+                    <div class="card">
+                        <div class="card__body">
+                            <div class="photo-controls">
+                                <select id="photoFilter" class="form-control">
+                                    <option value="">All Categories</option>
+                                    <option value="Foundation">Foundation</option>
+                                    <option value="Structure">Structure</option>
+                                    <option value="Roofing">Roofing</option>
+                                    <option value="Electrical">Electrical</option>
+                                    <option value="Plumbing">Plumbing</option>
+                                </select>
+                                <button id="uploadPhotoBtn" class="btn btn--primary">Upload Photo</button>
+                            </div>
+                            <div id="photoGrid" class="photo-grid"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3D Model Viewer -->
+                <div id="modelViewer" class="page-content hidden">
+                    <h2>3D House Model</h2>
+                    <div class="card">
+                        <div class="card__body">
+                            <div class="model-controls">
+                                <button id="resetCameraBtn" class="btn btn--secondary">Reset View</button>
+                                <button id="wireframeBtn" class="btn btn--secondary">Toggle Wireframe</button>
+                                <button id="toggleLightBtn" class="btn btn--secondary">Toggle Light</button>
+                            </div>
+                            <div id="threejsContainer" class="threejs-container"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Design Plans -->
+                <div id="designPlans" class="page-content hidden">
+                    <h2>Design Plans</h2>
+                    <div class="plans-grid">
+                        <div class="card">
+                            <div class="card__body">
+                                <h3>Ground Floor Plan</h3>
+                                <div class="plan-placeholder">
+                                    <p>Floor plan drawing would be displayed here</p>
+                                    <button class="btn btn--primary">Download PDF</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card__body">
+                                <h3>First Floor Plan</h3>
+                                <div class="plan-placeholder">
+                                    <p>Floor plan drawing would be displayed here</p>
+                                    <button class="btn btn--primary">Download PDF</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card__body">
+                                <h3>Elevation View</h3>
+                                <div class="plan-placeholder">
+                                    <p>Elevation drawing would be displayed here</p>
+                                    <button class="btn btn--primary">Download PDF</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Workers (Admin) -->
+                <div id="workers" class="page-content hidden">
+                    <h2>Worker Management</h2>
+                    <div class="card">
+                        <div class="card__body">
+                            <div class="workers-controls">
+                                <button id="addWorkerBtn" class="btn btn--primary">Add Worker</button>
+                                <button id="markAttendanceBtn" class="btn btn--secondary">Mark Attendance</button>
+                            </div>
+                            <div id="workersList"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Projects (Admin) -->
+                <div id="projects" class="page-content hidden">
+                    <h2>Project Management</h2>
+                    <div class="card">
+                        <div class="card__body">
+                            <div class="projects-controls">
+                                <button id="addProjectBtn" class="btn btn--primary">Add Project</button>
+                                <input type="text" id="projectSearch" class="form-control" placeholder="Search projects...">
+                            </div>
+                            <div id="projectsList"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="photoModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Photo Details</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="photoModalContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="addMaterialModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Material</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addMaterialForm">
+                    <div class="form-group">
+                        <label class="form-label">Material Name</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" name="quantity" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Unit</label>
+                        <input type="text" name="unit" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Supplier</label>
+                        <input type="text" name="supplier" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Cost per Unit</label>
+                        <input type="number" name="cost" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Usage</label>
+                        <input type="text" name="usage" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn--primary">Add Material</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
