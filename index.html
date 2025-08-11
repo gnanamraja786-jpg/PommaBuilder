@@ -5,12 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>POOMA BUILDER - Construction Management System</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
-    <script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <h1>POOMA BUILDER</h1>
+            <div class="spinner"></div>
+            <p>Loading Construction Management System...</p>
+        </div>
+    </div>
+
     <!-- Login Page -->
-    <div id="loginPage" class="login-container">
+    <div id="loginPage" class="login-container hidden">
         <div class="login-card">
             <div class="login-header">
                 <h1>POOMA BUILDER</h1>
@@ -23,22 +31,29 @@
             </div>
             
             <form id="loginForm" class="login-form">
+                <div id="loginError" class="error-message hidden"></div>
+                
                 <div class="form-group">
                     <label for="username" class="form-label">Username</label>
-                    <input type="text" id="username" class="form-control" required>
+                    <input type="text" id="username" class="form-control" required autocomplete="username">
                 </div>
                 
                 <div class="form-group">
                     <label for="password" class="form-label">Password</label>
-                    <input type="password" id="password" class="form-control" required>
+                    <input type="password" id="password" class="form-control" required autocomplete="current-password">
                 </div>
                 
-                <button type="submit" class="btn btn--primary btn--full-width">Login</button>
+                <button type="submit" id="loginBtn" class="btn btn--primary btn--full-width">
+                    <span class="btn-text">Login</span>
+                    <div class="btn-spinner hidden"></div>
+                </button>
                 
                 <div class="login-demo-info">
                     <p><strong>Demo Credentials:</strong></p>
-                    <p>Client: username: <code>client</code>, password: <code>client123</code></p>
-                    <p>Admin: username: <code>admin</code>, password: <code>admin123</code></p>
+                    <div id="demoCredentials">
+                        <p>Client: <code>client</code> / <code>client123</code></p>
+                        <p>Admin: <code>admin</code> / <code>admin123</code></p>
+                    </div>
                 </div>
             </form>
         </div>
@@ -54,8 +69,16 @@
                     <span id="userRole" class="user-role"></span>
                 </div>
                 <div class="header-right">
-                    <span id="userName" class="user-name"></span>
-                    <button id="logoutBtn" class="btn btn--outline btn--sm">Logout</button>
+                    <div class="user-info">
+                        <span id="userName" class="user-name"></span>
+                        <span id="userEmail" class="user-email"></span>
+                    </div>
+                    <button id="logoutBtn" class="btn btn--outline btn--sm">
+                        <span>Logout</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
         </header>
@@ -63,9 +86,13 @@
         <!-- Navigation -->
         <nav class="app-nav">
             <div class="nav-content">
+                <div class="nav-breadcrumb" id="breadcrumb"></div>
                 <ul class="nav-list" id="navList">
                     <!-- Navigation items will be populated by JavaScript -->
                 </ul>
+                <div class="project-selector" id="projectSelector">
+                    <!-- Project selector for admin will be populated by JavaScript -->
+                </div>
             </div>
         </nav>
 
@@ -75,7 +102,12 @@
                 
                 <!-- Client Dashboard -->
                 <div id="clientDashboard" class="page-content hidden">
-                    <h2>Project Dashboard</h2>
+                    <div class="page-header">
+                        <h2>Project Dashboard</h2>
+                        <div class="page-actions">
+                            <button class="btn btn--secondary" onclick="refreshData()">Refresh</button>
+                        </div>
+                    </div>
                     <div class="dashboard-grid">
                         <div class="card dashboard-card">
                             <div class="card__body">
@@ -88,6 +120,9 @@
                             <div class="card__body">
                                 <h3>Progress Summary</h3>
                                 <div id="progressSummary"></div>
+                                <div class="chart-container" style="position: relative; height: 200px;">
+                                    <canvas id="progressChart"></canvas>
+                                </div>
                             </div>
                         </div>
                         
@@ -109,12 +144,21 @@
 
                 <!-- Admin Dashboard -->
                 <div id="adminDashboard" class="page-content hidden">
-                    <h2>Admin Dashboard</h2>
+                    <div class="page-header">
+                        <h2>Admin Dashboard</h2>
+                        <div class="page-actions">
+                            <button class="btn btn--primary" onclick="showUserManagement()">Manage Users</button>
+                            <button class="btn btn--secondary" onclick="refreshData()">Refresh</button>
+                        </div>
+                    </div>
                     <div class="dashboard-grid admin-grid">
                         <div class="card dashboard-card">
                             <div class="card__body">
                                 <h3>Project Statistics</h3>
                                 <div id="projectStats"></div>
+                                <div class="chart-container" style="position: relative; height: 200px;">
+                                    <canvas id="projectsChart"></canvas>
+                                </div>
                             </div>
                         </div>
                         
@@ -122,6 +166,9 @@
                             <div class="card__body">
                                 <h3>Payment Overview</h3>
                                 <div id="paymentOverview"></div>
+                                <div class="chart-container" style="position: relative; height: 200px;">
+                                    <canvas id="paymentsChart"></canvas>
+                                </div>
                             </div>
                         </div>
                         
@@ -141,9 +188,46 @@
                     </div>
                 </div>
 
+                <!-- Project Overview -->
+                <div id="projectOverviewPage" class="page-content hidden">
+                    <div class="page-header">
+                        <h2>Project Overview</h2>
+                        <div class="page-actions">
+                            <button class="btn btn--primary" onclick="showProjectDetails()">View Details</button>
+                            <button class="btn btn--secondary" onclick="generateReport()">Generate Report</button>
+                        </div>
+                    </div>
+                    <div id="projectOverviewContent"></div>
+                </div>
+
+                <!-- Project Details -->
+                <div id="projectDetails" class="page-content hidden">
+                    <div class="page-header">
+                        <h2 id="projectDetailsTitle">Project Details</h2>
+                        <div class="page-actions">
+                            <button class="btn btn--outline" onclick="goBack()">Back</button>
+                            <button class="btn btn--primary" onclick="editProject()">Edit Project</button>
+                        </div>
+                    </div>
+                    <div id="projectDetailsContent"></div>
+                </div>
+
                 <!-- Site Progress -->
                 <div id="siteProgress" class="page-content hidden">
-                    <h2>Site Progress</h2>
+                    <div class="page-header">
+                        <h2>Site Progress</h2>
+                        <div class="page-actions">
+                            <select id="phaseFilter" class="form-control">
+                                <option value="">All Phases</option>
+                                <option value="Foundation">Foundation</option>
+                                <option value="Structure">Structure</option>
+                                <option value="Roofing">Roofing</option>
+                                <option value="Electrical">Electrical</option>
+                                <option value="Plumbing">Plumbing</option>
+                                <option value="Interior">Interior</option>
+                            </select>
+                        </div>
+                    </div>
                     <div class="progress-timeline">
                         <div id="progressTimeline"></div>
                     </div>
@@ -151,46 +235,82 @@
 
                 <!-- Transactions -->
                 <div id="transactions" class="page-content hidden">
-                    <h2>Transaction History</h2>
+                    <div class="page-header">
+                        <h2>Transaction History</h2>
+                        <div class="page-actions">
+                            <button class="btn btn--primary" onclick="addTransaction()">Add Payment</button>
+                            <button class="btn btn--secondary" onclick="exportTransactions()">Export</button>
+                        </div>
+                    </div>
                     <div class="card">
                         <div class="card__body">
                             <div class="transactions-controls">
-                                <input type="text" id="transactionSearch" class="form-control" placeholder="Search transactions...">
+                                <div class="search-group">
+                                    <input type="text" id="transactionSearch" class="form-control" placeholder="Search transactions...">
+                                    <button class="btn btn--outline" onclick="clearSearch('transactionSearch')">Clear</button>
+                                </div>
                                 <select id="transactionFilter" class="form-control">
                                     <option value="">All Types</option>
                                     <option value="milestone">Milestone</option>
                                     <option value="advance">Advance</option>
                                     <option value="materials">Materials</option>
                                 </select>
+                                <div class="date-range">
+                                    <input type="date" id="startDate" class="form-control">
+                                    <input type="date" id="endDate" class="form-control">
+                                </div>
                             </div>
-                            <div id="transactionsList"></div>
+                            <div id="transactionsList" class="table-container"></div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Materials -->
                 <div id="materials" class="page-content hidden">
-                    <h2>Material Tracking</h2>
+                    <div class="page-header">
+                        <h2>Material Tracking</h2>
+                        <div class="page-actions">
+                            <button id="addMaterialBtn" class="btn btn--primary">Add Material</button>
+                            <button class="btn btn--secondary" onclick="exportMaterials()">Export</button>
+                        </div>
+                    </div>
                     <div class="card">
                         <div class="card__body">
                             <div class="materials-controls">
-                                <input type="text" id="materialSearch" class="form-control" placeholder="Search materials...">
+                                <div class="search-group">
+                                    <input type="text" id="materialSearch" class="form-control" placeholder="Search materials...">
+                                    <button class="btn btn--outline" onclick="clearSearch('materialSearch')">Clear</button>
+                                </div>
                                 <select id="materialFilter" class="form-control">
                                     <option value="">All Status</option>
                                     <option value="Used">Used</option>
                                     <option value="In Use">In Use</option>
                                     <option value="Delivered">Delivered</option>
                                 </select>
-                                <button id="addMaterialBtn" class="btn btn--primary">Add Material</button>
+                                <select id="phaseFilterMaterials" class="form-control">
+                                    <option value="">All Phases</option>
+                                    <option value="Foundation">Foundation</option>
+                                    <option value="Structure">Structure</option>
+                                    <option value="Roofing">Roofing</option>
+                                    <option value="Electrical">Electrical</option>
+                                    <option value="Plumbing">Plumbing</option>
+                                    <option value="Interior">Interior</option>
+                                </select>
                             </div>
-                            <div id="materialsList"></div>
+                            <div id="materialsList" class="table-container"></div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Photo Gallery -->
                 <div id="photoGallery" class="page-content hidden">
-                    <h2>Photo Gallery</h2>
+                    <div class="page-header">
+                        <h2>Photo Gallery</h2>
+                        <div class="page-actions">
+                            <button id="uploadPhotoBtn" class="btn btn--primary">Upload Photo</button>
+                            <button class="btn btn--secondary" onclick="downloadPhotos()">Download All</button>
+                        </div>
+                    </div>
                     <div class="card">
                         <div class="card__body">
                             <div class="photo-controls">
@@ -201,87 +321,104 @@
                                     <option value="Roofing">Roofing</option>
                                     <option value="Electrical">Electrical</option>
                                     <option value="Plumbing">Plumbing</option>
+                                    <option value="Interior">Interior</option>
+                                    <option value="Planning">Planning</option>
                                 </select>
-                                <button id="uploadPhotoBtn" class="btn btn--primary">Upload Photo</button>
+                                <div class="view-controls">
+                                    <button class="btn btn--outline view-btn active" data-view="grid">Grid View</button>
+                                    <button class="btn btn--outline view-btn" data-view="list">List View</button>
+                                </div>
                             </div>
                             <div id="photoGrid" class="photo-grid"></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 3D Model Viewer -->
-                <div id="modelViewer" class="page-content hidden">
-                    <h2>3D House Model</h2>
-                    <div class="card">
-                        <div class="card__body">
-                            <div class="model-controls">
-                                <button id="resetCameraBtn" class="btn btn--secondary">Reset View</button>
-                                <button id="wireframeBtn" class="btn btn--secondary">Toggle Wireframe</button>
-                                <button id="toggleLightBtn" class="btn btn--secondary">Toggle Light</button>
-                            </div>
-                            <div id="threejsContainer" class="threejs-container"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Design Plans -->
-                <div id="designPlans" class="page-content hidden">
-                    <h2>Design Plans</h2>
-                    <div class="plans-grid">
-                        <div class="card">
-                            <div class="card__body">
-                                <h3>Ground Floor Plan</h3>
-                                <div class="plan-placeholder">
-                                    <p>Floor plan drawing would be displayed here</p>
-                                    <button class="btn btn--primary">Download PDF</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card">
-                            <div class="card__body">
-                                <h3>First Floor Plan</h3>
-                                <div class="plan-placeholder">
-                                    <p>Floor plan drawing would be displayed here</p>
-                                    <button class="btn btn--primary">Download PDF</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card">
-                            <div class="card__body">
-                                <h3>Elevation View</h3>
-                                <div class="plan-placeholder">
-                                    <p>Elevation drawing would be displayed here</p>
-                                    <button class="btn btn--primary">Download PDF</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Workers (Admin) -->
                 <div id="workers" class="page-content hidden">
-                    <h2>Worker Management</h2>
+                    <div class="page-header">
+                        <h2>Worker Management</h2>
+                        <div class="page-actions">
+                            <button id="addWorkerBtn" class="btn btn--primary">Add Worker</button>
+                            <button id="markAttendanceBtn" class="btn btn--secondary">Mark Attendance</button>
+                            <button class="btn btn--secondary" onclick="exportWorkers()">Export</button>
+                        </div>
+                    </div>
                     <div class="card">
                         <div class="card__body">
                             <div class="workers-controls">
-                                <button id="addWorkerBtn" class="btn btn--primary">Add Worker</button>
-                                <button id="markAttendanceBtn" class="btn btn--secondary">Mark Attendance</button>
+                                <div class="search-group">
+                                    <input type="text" id="workerSearch" class="form-control" placeholder="Search workers...">
+                                    <button class="btn btn--outline" onclick="clearSearch('workerSearch')">Clear</button>
+                                </div>
+                                <select id="roleFilter" class="form-control">
+                                    <option value="">All Roles</option>
+                                    <option value="Site Supervisor">Site Supervisor</option>
+                                    <option value="Mason">Mason</option>
+                                    <option value="Electrician">Electrician</option>
+                                    <option value="Plumber">Plumber</option>
+                                    <option value="Helper">Helper</option>
+                                </select>
                             </div>
-                            <div id="workersList"></div>
+                            <div id="workersList" class="table-container"></div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Projects (Admin) -->
                 <div id="projects" class="page-content hidden">
-                    <h2>Project Management</h2>
+                    <div class="page-header">
+                        <h2>Project Management</h2>
+                        <div class="page-actions">
+                            <button id="addProjectBtn" class="btn btn--primary">Add Project</button>
+                            <button class="btn btn--secondary" onclick="exportProjects()">Export</button>
+                        </div>
+                    </div>
                     <div class="card">
                         <div class="card__body">
                             <div class="projects-controls">
-                                <button id="addProjectBtn" class="btn btn--primary">Add Project</button>
-                                <input type="text" id="projectSearch" class="form-control" placeholder="Search projects...">
+                                <div class="search-group">
+                                    <input type="text" id="projectSearch" class="form-control" placeholder="Search projects...">
+                                    <button class="btn btn--outline" onclick="clearSearch('projectSearch')">Clear</button>
+                                </div>
+                                <select id="statusFilter" class="form-control">
+                                    <option value="">All Status</option>
+                                    <option value="Planning">Planning</option>
+                                    <option value="In Progress">In Progress</option>
+                                    <option value="Completed">Completed</option>
+                                    <option value="On Hold">On Hold</option>
+                                </select>
                             </div>
-                            <div id="projectsList"></div>
+                            <div id="projectsList" class="table-container"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reports -->
+                <div id="reports" class="page-content hidden">
+                    <div class="page-header">
+                        <h2>Reports & Analytics</h2>
+                        <div class="page-actions">
+                            <button class="btn btn--primary" onclick="generateCustomReport()">Custom Report</button>
+                            <button class="btn btn--secondary" onclick="scheduleReport()">Schedule Report</button>
+                        </div>
+                    </div>
+                    <div class="reports-grid">
+                        <div class="card">
+                            <div class="card__body">
+                                <h3>Financial Summary</h3>
+                                <div class="chart-container" style="position: relative; height: 300px;">
+                                    <canvas id="financialChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card__body">
+                                <h3>Project Timeline</h3>
+                                <div class="chart-container" style="position: relative; height: 300px;">
+                                    <canvas id="timelineChart"></canvas>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -311,35 +448,63 @@
             </div>
             <div class="modal-body">
                 <form id="addMaterialForm">
-                    <div class="form-group">
-                        <label class="form-label">Material Name</label>
-                        <input type="text" name="name" class="form-control" required>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Material Name*</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Phase*</label>
+                            <select name="phase" class="form-control" required>
+                                <option value="">Select Phase</option>
+                                <option value="Foundation">Foundation</option>
+                                <option value="Structure">Structure</option>
+                                <option value="Roofing">Roofing</option>
+                                <option value="Electrical">Electrical</option>
+                                <option value="Plumbing">Plumbing</option>
+                                <option value="Interior">Interior</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Quantity*</label>
+                            <input type="number" name="quantity" class="form-control" required min="1">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Unit*</label>
+                            <input type="text" name="unit" class="form-control" required placeholder="bags, kg, pieces, etc.">
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Quantity</label>
-                        <input type="number" name="quantity" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Unit</label>
-                        <input type="text" name="unit" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Supplier</label>
+                        <label class="form-label">Supplier*</label>
                         <input type="text" name="supplier" class="form-control" required>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Cost per Unit</label>
-                        <input type="number" name="cost" class="form-control" required>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Cost per Unit*</label>
+                            <input type="number" name="cost" class="form-control" required min="0" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Delivery Date</label>
+                            <input type="date" name="deliveryDate" class="form-control">
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Usage</label>
-                        <input type="text" name="usage" class="form-control" required>
+                        <label class="form-label">Usage/Purpose</label>
+                        <textarea name="usage" class="form-control" rows="2" placeholder="Describe how this material will be used"></textarea>
                     </div>
-                    <button type="submit" class="btn btn--primary">Add Material</button>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn--outline" onclick="closeModal()">Cancel</button>
+                        <button type="submit" class="btn btn--primary">Add Material</button>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
+
+    <!-- Success/Error Messages -->
+    <div id="messageContainer" class="message-container"></div>
 
     <script src="app.js"></script>
 </body>
